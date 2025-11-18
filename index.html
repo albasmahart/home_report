@@ -220,47 +220,49 @@
 			fetch(url)
 				.then(res => res.text())
 				.then(rep => {
-					h1 {
-						color: #1d70b7;
-						text-align: right;
-						font-size: 2.5em;
-						letter-spacing: 1px;
-						font-weight: bold;
-						font-family: 'Cairo', 'Bahij TheSansArabicSemiLight', Arial, sans-serif;
-						margin: 0;
-					}
-									if (val === true || val === "true") {
-										return '<span style="color:#1d70b7;font-size:1.3em;font-weight:bold">✔</span>';
-									} else if (typeof val === "string" && val.replace(/\s/g, "") === "بدون") {
-										return '<span style="color:#868686;font-size:1.3em;font-weight:bold">—</span>';
-									} else {
-										return '<span style="color:#e53935;font-size:1.3em;font-weight:bold">✖</span>';
-									}
-								}
+					try {
+						var json = JSON.parse(rep.substr(47).slice(0, -2));
+						var rows = json.table.rows;
+						var data = [];
+						var numbering = 1;
+
+						function boolIcon(val) {
+							if (val === true || val === "true") {
+								return '<span style="color:#1d70b7;font-size:1.3em;font-weight:bold">✔</span>';
+							} else if (typeof val === "string" && val.replace(/\s/g, "") === "بدون") {
+								return '<span style="color:#868686;font-size:1.3em;font-weight:bold">—</span>';
+							} else {
+								return '<span style="color:#e53935;font-size:1.3em;font-weight:bold">✖</span>';
+							}
+						}
+
+						function formatSheetDate(val) {
+							if (!val) return '';
+							let match = /Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)/.exec(val);
+							if (match) {
+								let year = match[1];
+								let month = (parseInt(match[2]) + 1).toString().padStart(2, '0');
+								let day = match[3].padStart(2, '0');
+								let hour = match[4].padStart(2, '0');
+								let min = match[5].padStart(2, '0');
+								let sec = match[6].padStart(2, '0');
+								let hourNum = parseInt(hour, 10);
+								let ampm = hourNum < 12 ? 'AM' : 'PM';
+								let hour12 = hourNum % 12;
+								if (hour12 === 0) hour12 = 12;
+								let hour12Str = hour12.toString().padStart(2, '0');
+								return `${ampm} ${hour12Str}:${min}:${sec}<br>${year}/${month}/${day}`;
+							}
+							return val;
+						}
+
+						rows.forEach(row => {
+							if (row.c[1] && row.c[1].v && row.c[1].v.trim() !== "") {
 								let done = 0;
 								if (row.c[2] && (row.c[2].v === true || row.c[2].v === "true")) done++;
 								if (row.c[3] && (row.c[3].v === true || row.c[3].v === "true")) done++;
 								if (row.c[4] && (row.c[4].v === true || row.c[4].v === "true")) done++;
 								let percent = Math.round((done / 3) * 100);
-								function formatSheetDate(val) {
-									if (!val) return '';
-									let match = /Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)/.exec(val);
-									if (match) {
-										let year = match[1];
-										let month = (parseInt(match[2]) + 1).toString().padStart(2, '0');
-										let day = match[3].padStart(2, '0');
-										let hour = match[4].padStart(2, '0');
-										let min = match[5].padStart(2, '0');
-										let sec = match[6].padStart(2, '0');
-										let hourNum = parseInt(hour, 10);
-										let ampm = hourNum < 12 ? 'AM' : 'PM';
-										let hour12 = hourNum % 12;
-										if (hour12 === 0) hour12 = 12;
-										let hour12Str = hour12.toString().padStart(2, '0');
-										return `${ampm} ${hour12Str}:${min}:${sec}<br>${year}/${month}/${day}`;
-									}
-									return val;
-								}
 								data.push([
 									numbering++,
 									row.c[1] ? row.c[1].v : '',
